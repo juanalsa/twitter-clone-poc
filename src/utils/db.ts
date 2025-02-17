@@ -12,6 +12,11 @@ export type LoginUserData = {
   password: string;
 };
 
+export type CreateTweetData = {
+  user: string;
+  content: string;
+};
+
 export const createUser = async (
   connectionString: string,
   registerUserData: RegisterUserData
@@ -67,4 +72,23 @@ export const findUserById = async (connectionString: string, id: string) => {
 
   const userFromDb = rows[0];
   return userFromDb;
+};
+
+export const createTweet = async (
+  connectionString: string,
+  createTweetData: CreateTweetData
+) => {
+  const client = new Client({
+    connectionString,
+  });
+
+  await client.connect();
+
+  const { rows } = await client.query(
+    'INSERT INTO tweets (user_id, content) VALUES ($1, $2)',
+    [createTweetData.user, createTweetData.content]
+  );
+
+  const tweets = rows;
+  return tweets;
 };
