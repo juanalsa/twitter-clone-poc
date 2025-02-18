@@ -2,14 +2,17 @@ import bcrypt from 'bcryptjs';
 import { Context } from 'hono';
 import { createFactory } from 'hono/factory';
 import { sign } from 'hono/jwt';
-import { createUser, findUserByEmail, RegisterUserData } from '../utils/db';
+import { createUser, findUserByEmail } from '../utils/db';
+import { RegisterUserData } from '../utils/types';
 import { Validators } from '../utils/validators';
 
 const factory = createFactory();
 
+// Register user handler
 export const registerUser = factory.createHandlers(async (c: Context) => {
   const { username, email, password, bio = '' } = await c.req.json();
 
+  // Validate input data
   if (!username) return c.json({ error: 'Username is required' }, 400);
 
   if (!email) return c.json({ error: 'Email is required' }, 400);
@@ -25,6 +28,7 @@ export const registerUser = factory.createHandlers(async (c: Context) => {
       400
     );
 
+  // Hash the password using bcrypt
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const registerUserData: RegisterUserData = {
@@ -48,10 +52,12 @@ export const registerUser = factory.createHandlers(async (c: Context) => {
   }
 });
 
+// Login user handler
 export const loginUser = factory.createHandlers(async (c: Context) => {
   const JWT_SECRET = c.env.JWT_SECRET || 'default_secret';
   const { email, password } = await c.req.json();
 
+  // Validate input data
   if (!email) return c.json({ error: 'Email is required' }, 400);
 
   if (!Validators.email.test(email))
@@ -71,10 +77,12 @@ export const loginUser = factory.createHandlers(async (c: Context) => {
 
     if (!user) return c.json({ error: 'User not found' }, 404);
 
+    // Compare the hashed password with the provided password
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) return c.json({ error: 'Invalid password' }, 401);
 
+    // Generate JSON Web Token (JWT) with user ID and expiration time
     const payload = {
       id: user.id,
       exp: Math.floor(Date.now() / 1000) + 60 * 5, // Token expires in 5 minutes

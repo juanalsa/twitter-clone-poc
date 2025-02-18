@@ -1,22 +1,12 @@
 import { Client } from '@neondatabase/serverless';
+import { CreateTweetData, NotificationData, RegisterUserData } from './types';
 
-export type RegisterUserData = {
-  username: string;
-  email: string;
-  password: string;
-  bio?: string;
-};
-
-export type LoginUserData = {
-  email: string;
-  password: string;
-};
-
-export type CreateTweetData = {
-  user: string;
-  content: string;
-};
-
+/**
+ * Create a new user in the Neon database
+ * @param connectionString String String to connect to the Neon database
+ * @param registerUserData Register user data
+ * @returns User object if created, otherwise null
+ */
 export const createUser = async (
   connectionString: string,
   registerUserData: RegisterUserData
@@ -41,6 +31,12 @@ export const createUser = async (
   return users;
 };
 
+/**
+ * Find a user by email in the Neon database
+ * @param connectionString String to connect to the Neon database
+ * @param email String Email of the user to find
+ * @returns User object if found, otherwise null
+ */
 export const findUserByEmail = async (
   connectionString: string,
   email: string
@@ -59,6 +55,12 @@ export const findUserByEmail = async (
   return userFromDb;
 };
 
+/**
+ * Find a user by id in the Neon database
+ * @param connectionString String to connect to the Neon database
+ * @param id String Id of the user to find
+ * @returns User object if found, otherwise null
+ */
 export const findUserById = async (connectionString: string, id: string) => {
   const client = new Client({
     connectionString,
@@ -74,6 +76,12 @@ export const findUserById = async (connectionString: string, id: string) => {
   return userFromDb;
 };
 
+/**
+ * Create a new tweet in the Neon database
+ * @param connectionString String to connect to the Neon database
+ * @param createTweetData Create tweet data
+ * @returns Tweet object if created, otherwise null
+ */
 export const createTweet = async (
   connectionString: string,
   createTweetData: CreateTweetData
@@ -85,10 +93,39 @@ export const createTweet = async (
   await client.connect();
 
   const { rows } = await client.query(
-    'INSERT INTO tweets (user_id, content) VALUES ($1, $2)',
-    [createTweetData.user, createTweetData.content]
+    'INSERT INTO tweets (user_id, content) VALUES ($1, $2) RETURNING id, content',
+    [createTweetData.userId, createTweetData.content]
   );
 
-  const tweets = rows;
-  return tweets;
+  const tweet = rows[0];
+  return tweet;
+};
+
+/**
+ * Create a new notification in the Neon database
+ * @param connectionString String to connect to the Neon database
+ * @param notificationData Notification data
+ * @returns Notification object if created, otherwise null
+ */
+export const createNotification = async (
+  connectionString: string,
+  notificationData: NotificationData
+) => {
+  const client = new Client({
+    connectionString,
+  });
+
+  await client.connect();
+
+  const { rows } = await client.query(
+    'INSERT INTO notifications (user_id, type, reference_id) VALUES ((SELECT id FROM users WHERE username = $1), $2, $3)',
+    [
+      notificationData.userName,
+      notificationData.type,
+      notificationData.referenceId,
+    ]
+  );
+
+  const notification = rows[0];
+  return notification;
 };
