@@ -1,9 +1,18 @@
-import { Hono } from 'hono'
+import { Hono } from 'hono';
+import authRoute from './routes/auth.route';
+import tweetRoute from './routes/tweet.route';
+import { processQueue } from './workers/queue.worker';
 
-const app = new Hono()
+export interface Env {
+  TWEET_QUEUE: Queue<any>;
+}
 
-app.get('/', (c) => {
-  return c.text('Hello Hono!')
-})
+const app = new Hono();
 
-export default app
+app.route('/auth', authRoute);
+app.route('/tweets', tweetRoute);
+
+export default {
+    fetch: app.fetch,
+    queue: processQueue
+};

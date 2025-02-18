@@ -1,0 +1,12 @@
+name = "twitter-clone-poc"
+main = "src/index.ts"
+compatibility_date = "2024-02-15"
+
+[[queues.producers]]
+queue = "tweet-processing"
+binding = "TWEET_QUEUE"
+
+[[queues.consumers]]
+queue = "tweet-processing"
+max_batch_size = 10
+max_batch_timeout = 5 
